@@ -1,0 +1,43 @@
+project:
+  name: fema-nfhl-flood-hazard-pipeline
+  case_study: Alameda County, California
+
+paths:
+  raw_data: data/raw
+  extracted_data: data/extracted
+  case_study_data: data/case_study/alameda
+  processed_data: data/processed
+  outputs: outputs
+
+case_study:
+  name: Alameda County
+  state: California
+  county_fips: "06001"
+  boundary_path: data/boundaries/alameda_county.shp
+  boundary_id_field: GEOID
+  boundary_id_value: "06001"
+  clip_output: data/case_study/alameda
+  clip_format: shapefile
+  layers:
+    - S_FLD_HAZ_AR
+    - S_BFE
+    - S_XS
+    - S_WTR_LN
+    - S_LOMR
+    - L_COMMUNITY_INFO
+
+download:
+  state: CALIFORNIA
+  skip_existing: true
+  timeout_seconds: 60
+  retries: 3
+
+analysis:
+  equal_area_crs: EPSG:5070
+  web_map_crs: EPSG:4326
+  bbox: null
+
+scientific_assumptions:
+  flood_hazard_source: FEMA NFHL
+  flood_depth_modeling_included: false
+  not_for_official_use: true

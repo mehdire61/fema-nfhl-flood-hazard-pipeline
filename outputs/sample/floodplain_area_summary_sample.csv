@@ -1,0 +1,4 @@
+admin_id,admin_name,fld_zone,zone_subty,flood_area_sq_km,admin_area_sq_km,flood_area_percent
+06001,Alameda County,AE,,42.15,1910.30,2.206
+06001,Alameda County,AE,FLOODWAY,5.42,1910.30,0.284
+06001,Alameda County,X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD,18.74,1910.30,0.981

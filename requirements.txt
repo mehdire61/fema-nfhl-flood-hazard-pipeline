@@ -1,0 +1,21 @@
+requests>=2.31
+beautifulsoup4>=4.12
+pandas>=2.0
+geopandas>=0.14
+shapely>=2.0
+numpy>=1.24
+matplotlib>=3.8
+folium>=0.15
+pyyaml>=6.0
+tqdm>=4.66
+pyarrow>=14.0
+pytest>=8.0
+ruff>=0.4
+
+# Optional CLI nicety; the core workflow does not depend on it.
+rich>=13.0
+
+# Optional static map image export. Run `python -m playwright install chromium`
+# if you want Playwright-managed browsers instead of a local Chrome/Edge install.
+playwright>=1.44
+Pillow>=10.0

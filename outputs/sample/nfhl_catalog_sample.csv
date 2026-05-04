@@ -1,0 +1,4 @@
+layer_name,file_path,geometry_type,feature_count,crs,bounds,fields,has_fld_zone,has_zone_subty,has_elev
+S_FLD_HAZ_AR,data/case_study/alameda/S_FLD_HAZ_AR.shp,Polygon;MultiPolygon,1250,EPSG:4326,"[-122.35, 37.45, -121.45, 37.95]","[""FLD_ZONE"", ""ZONE_SUBTY"", ""SFHA_TF"", ""STATIC_BFE"", ""DEPTH"", ""LEN_UNIT"", ""V_DATUM"", ""SOURCE_CIT"", ""geometry""]",True,True,False
+S_BFE,data/case_study/alameda/S_BFE.shp,LineString,148,EPSG:4326,"[-122.30, 37.50, -121.55, 37.90]","[""ELEV"", ""LEN_UNIT"", ""V_DATUM"", ""SOURCE_CIT"", ""geometry""]",False,False,True
+L_COMMUNITY_INFO,data/case_study/alameda/L_COMMUNITY_INFO.shp,Polygon,22,EPSG:4326,"[-122.35, 37.45, -121.45, 37.95]","[""CID"", ""COMMUNITY"", ""geometry""]",False,False,False

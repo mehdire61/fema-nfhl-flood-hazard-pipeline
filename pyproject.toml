@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fema-nfhl-flood-hazard-pipeline"
+version = "0.1.0"
+description = "Reproducible FEMA NFHL ingestion, validation, mapping, and exposure workflow."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Mehdi" }]
+dependencies = [
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
+    "pandas>=2.0",
+    "geopandas>=0.14",
+    "shapely>=2.0",
+    "numpy>=1.24",
+    "matplotlib>=3.8",
+    "folium>=0.15",
+    "pyyaml>=6.0",
+    "tqdm>=4.66",
+    "pyarrow>=14.0",
+]
+
+[project.optional-dependencies]
+cli = ["rich>=13.0"]
+export = ["playwright>=1.44", "Pillow>=10.0"]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[project.scripts]
+fema-nfhl = "fema_nfhl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+fema_nfhl = ["data/*.csv"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

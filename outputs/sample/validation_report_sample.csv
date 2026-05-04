@@ -1,0 +1,12 @@
+check,severity,layer,status,message,value
+required_layer_present,info,S_FLD_HAZ_AR,pass,Required layer S_FLD_HAZ_AR is present.,
+recommended_layer_present,info,S_BFE,pass,Recommended layer S_BFE is present.,
+crs_present,info,S_FLD_HAZ_AR,pass,CRS is present.,EPSG:4326
+empty_geometries,info,S_FLD_HAZ_AR,pass,Empty geometries: 0,0
+invalid_geometries,info,S_FLD_HAZ_AR,pass,Invalid geometries: 0,0
+fld_zone_missing_values,info,S_FLD_HAZ_AR,pass,Fld zone missing values: 0,0
+zone_subty_missing_values,warning,S_FLD_HAZ_AR,warning,Zone subty missing values: 36,36
+crs_present,info,S_BFE,pass,CRS is present.,EPSG:4326
+bfe_null_values,info,S_BFE,pass,Bfe null values: 0,ELEV
+bfe_non_numeric_values,info,S_BFE,pass,Bfe non numeric values: 0,ELEV
+bfe_zero_values,info,S_BFE,pass,Bfe zero values: 0,ELEV
