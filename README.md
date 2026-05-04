@@ -1,8 +1,8 @@
 # fema-nfhl-flood-hazard-pipeline
 
-A reproducible Python workflow for FEMA National Flood Hazard Layer (NFHL) data ingestion, validation, transformation, mapping, and flood hazard exposure summaries.
+A reproducible Python pipeline for downloading, ingesting, validating, transforming, mapping, and summarizing flood-hazard exposure using FEMA National Flood Hazard Layer (NFHL) data.
 
-This project converts exploratory FEMA NFHL notebooks into a reusable portfolio-quality geospatial pipeline. It is designed for climate-risk, hydrology, flood-risk, and geospatial model validation workflows where defensible data handling, CRS checks, and transparent assumptions matter as much as the final map.
+This project builds a reusable, portfolio-quality geospatial workflow for FEMA NFHL data. It is intended for regulatory flood-hazard screening support—not as an official FEMA process—as well as physical climate risk analysis support, hydrologic context development, and geospatial model validation tasks where defensible data handling, CRS checks, transparent assumptions, and reproducible outputs matter as much as the final map.
 
 ## Preview
 
@@ -10,7 +10,9 @@ This project converts exploratory FEMA NFHL notebooks into a reusable portfolio-
 
 ## Why This Matters
 
-Flood-risk workflows often start with public hazard data and quickly become hard to audit: files are downloaded manually, paths are local, CRS transformations are implicit, and outputs are hard to reproduce. This project demonstrates how to move from exploratory analysis to a validation-oriented workflow that can be reviewed, repeated, and extended.
+Flood-risk modeling often begins with public flood-hazard datasets but quickly becomes difficult to audit. Data may be downloaded manually, file paths may be local, CRS transformations may be implicit, and outputs may be hard to reproduce.
+
+This project demonstrates how to move from exploratory geospatial analysis to a structured, validation-oriented workflow that can be reviewed, repeated, and extended. It emphasizes transparent FEMA NFHL data handling, flood-zone classification, CRS validation, mapping, and exposure summarization.
 
 ## What The Workflow Does
 
