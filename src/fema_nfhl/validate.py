@@ -111,6 +111,9 @@ def validate_geodataframe(gdf, layer_name: str) -> list[ValidationFinding]:
     if layer_name == "S_FLD_HAZ_AR":
         findings.extend(_field_check(gdf, layer_name, "FLD_ZONE", expected=True))
         findings.extend(_field_check(gdf, layer_name, "ZONE_SUBTY", expected=True))
+        static_bfe = field_names.get("STATIC_BFE")
+        if static_bfe:
+            findings.extend(validate_bfe_values(gdf[static_bfe], layer_name, static_bfe))
     if layer_name == "S_BFE":
         elev_field = field_names.get("ELEV") or field_names.get("STATIC_BFE")
         if elev_field:
@@ -121,16 +124,31 @@ def validate_geodataframe(gdf, layer_name: str) -> list[ValidationFinding]:
 
 
 def validate_bfe_values(values, layer_name: str = "S_BFE", field_name: str = "ELEV") -> list[ValidationFinding]:
-    """Validate BFE elevation values for null, zero, and non-numeric records."""
+    """Report missing BFE codes separately from valid zero/negative elevations.
+
+    FEMA FIRM Database Technical Reference (November 2024), section 7.3:
+    -9999 represents null/not applicable; -8888 means intentionally not populated.
+    STATIC_BFE is only required when applicable, so its null values are informational.
+    Source values are inspected without replacement or mutation.
+    """
 
     numeric = pd.to_numeric(values, errors="coerce")
-    null_count = int(values.isna().sum())
-    non_numeric = int(numeric.isna().sum() - null_count)
+    text = values.astype("string").str.strip().str.lower()
+    missing = values.isna() | text.isin(["", "nan", "none", "null", "<null>"])
+    null_count = int(missing.sum())
+    non_numeric = int((numeric.isna() & ~missing).sum())
+    not_applicable_count = int((numeric == -9999).sum())
+    not_populated_count = int((numeric == -8888).sum())
+    non_finite_count = int(numeric.isin([float("inf"), float("-inf")]).sum())
     zero_count = int((numeric == 0).sum())
+    null_severity = "info" if field_name.upper() == "STATIC_BFE" else "error"
     return [
-        _count_finding("bfe_null_values", "error", layer_name, null_count, field_name),
+        _count_finding("bfe_null_values", null_severity, layer_name, null_count, field_name),
         _count_finding("bfe_non_numeric_values", "error", layer_name, non_numeric, field_name),
-        _count_finding("bfe_zero_values", "warning", layer_name, zero_count, field_name),
+        _count_finding("bfe_zero_values", "info", layer_name, zero_count, field_name),
+        _count_finding("bfe_not_applicable_values", null_severity, layer_name, not_applicable_count, field_name),
+        _count_finding("bfe_not_populated_values", "warning", layer_name, not_populated_count, field_name),
+        _count_finding("bfe_non_finite_values", "error", layer_name, non_finite_count, field_name),
     ]
 
 
@@ -156,7 +174,7 @@ def _count_finding(
     count: int,
     value: str | None = None,
 ) -> ValidationFinding:
-    status = "pass" if count == 0 else "warning"
+    status = "pass" if count == 0 or severity_if_nonzero == "info" else "warning"
     severity = "info" if count == 0 else severity_if_nonzero
     message = f"{check.replace('_', ' ').capitalize()}: {count}"
     return ValidationFinding(check, severity, layer, status, message, str(count if value is None else value))

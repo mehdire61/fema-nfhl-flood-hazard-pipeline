@@ -145,7 +145,7 @@ def test_create_interactive_map_writes_grouped_and_detailed_layers(tmp_path) -> 
     assert "Raw FEMA attributes" in html
     assert "Advanced FEMA attributes" not in html
     assert "Basemap: CARTO Positron" in html
-    assert "commonly shaded Zone X where mapped" in html
+    assert "Explicitly designated 0.2% annual chance flood hazard (Zone X)" in html
     assert "not an official FEMA flood determination" in html
     assert "Find Location" in html
     assert "Longitude / X" in html
