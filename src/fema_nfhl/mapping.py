@@ -59,7 +59,21 @@ HAZARD_CATEGORIES = {
         key="zero_two_percent",
         label="0.2% Annual Chance Flood Hazard",
         color="#f6c46f",
-        explanation="Moderate flood hazard, commonly shaded Zone X where mapped.",
+        explanation="Explicitly designated 0.2% annual chance flood hazard (Zone X).",
+        fill_opacity=0.52,
+    ),
+    "shallow_one_percent": HazardCategory(
+        key="shallow_one_percent",
+        label="Shallow 1% Flooding (Zone X)",
+        color="#e5b55c",
+        explanation="1% annual chance flooding with average depth under 1 foot; mapped as Zone X, outside SFHA.",
+        fill_opacity=0.52,
+    ),
+    "small_drainage": HazardCategory(
+        key="small_drainage",
+        label="Small Drainage Area 1% Flooding (Zone X)",
+        color="#c7a450",
+        explanation="1% annual chance flooding with drainage area under 1 square mile; Zone X, outside SFHA.",
         fill_opacity=0.52,
     ),
     "future_conditions": HazardCategory(
@@ -90,6 +104,13 @@ HAZARD_CATEGORIES = {
         explanation="Unshaded Zone X / minimal mapped flood hazard.",
         fill_opacity=0.18,
     ),
+    "unresolved_x": HazardCategory(
+        key="unresolved_x",
+        label="Unresolved Zone X",
+        color="#7b8794",
+        explanation="Missing, unrecognized, or ambiguous subtype; minimal hazard is not established. Not FEMA Zone D.",
+        fill_opacity=0.4,
+    ),
     "open_water": HazardCategory(
         key="open_water",
         label="Open Water",
@@ -112,10 +133,13 @@ CATEGORY_ORDER = [
     "coastal_high_hazard",
     "undetermined",
     "zero_two_percent",
+    "shallow_one_percent",
+    "small_drainage",
     "future_conditions",
     "reduced_levee",
     "levee_risk",
     "minimal",
+    "unresolved_x",
     "open_water",
     "other",
 ]
@@ -226,6 +250,8 @@ def categorize_flood_hazard(fld_zone: object, zone_subty: object) -> HazardCateg
     subtype = _normalize(zone_subty)
     if _is_area_not_included(zone):
         return HAZARD_CATEGORIES["other"]
+    if zone == "X":
+        return _zone_x_category(subtype)
     if _is_regulatory_floodway(subtype):
         return HAZARD_CATEGORIES["regulatory_floodway"]
     if zone in {"V", "VE"}:
@@ -238,22 +264,46 @@ def categorize_flood_hazard(fld_zone: object, zone_subty: object) -> HazardCateg
         return HAZARD_CATEGORIES["levee_risk"]
     if zone == "D":
         return HAZARD_CATEGORIES["undetermined"]
-    if zone == "X" and (
-        "0.2 PCT" in subtype
-        or "0.2 PERCENT" in subtype
-        or "1 PCT DEPTH LESS THAN 1 FOOT" in subtype
-        or "1 PERCENT DEPTH LESS THAN 1 FOOT" in subtype
-        or "1 PCT DRAINAGE AREA LESS THAN 1 SQUARE MILE" in subtype
-        or "1 PERCENT DRAINAGE AREA LESS THAN 1 SQUARE MILE" in subtype
-    ):
-        return HAZARD_CATEGORIES["zero_two_percent"]
-    if zone == "X" or "MINIMAL FLOOD HAZARD" in subtype:
+    if "MINIMAL FLOOD HAZARD" in subtype:
         return HAZARD_CATEGORIES["minimal"]
     if zone == "OPEN WATER":
         return HAZARD_CATEGORIES["open_water"]
     if zone in {"A", "AE", "AH", "AO", "AR", "A99"}:
         return HAZARD_CATEGORIES["one_percent"]
     return HAZARD_CATEGORIES["other"]
+
+
+def _zone_x_category(subtype: str) -> HazardCategory:
+    """Match documented X designations, without inferring shading from missing data.
+
+    FEMA FIRM Database Technical Reference (Nov 2024), Table 14; NFHL
+    Guidance (Nov 2023), legacy schema crosswalk. Neither SFHA_TF=F nor
+    a blank subtype distinguishes shaded X from unshaded X in unknown data.
+    """
+
+    subtype = " ".join(subtype.replace("-", " ").replace("PERCENT", "PCT").replace("%", " PCT").split())
+    subtype = subtype.replace("CONDITONS", "CONDITIONS")
+    categories = {
+        "1 PCT DEPTH LESS THAN 1 FOOT": "shallow_one_percent",
+        "1 PCT DRAINAGE AREA LESS THAN 1 SQUARE MILE": "small_drainage",
+        "1 PCT FUTURE CONDITIONS": "future_conditions",
+        "1 PCT FUTURE CONDITIONS CONTAINED IN STRUCTURE": "future_conditions",
+        "1 PCT FUTURE CONDITIONS, FLOODWAY": "future_conditions",
+        "1 PCT FUTURE CONDITIONS, COMMUNITY ENCROACHMENT": "future_conditions",
+        "AREA WITH REDUCED FLOOD RISK DUE TO LEVEE": "reduced_levee",
+        "AREA WITH REDUCED FLOOD HAZARD DUE TO LEVEE SYSTEM": "reduced_levee",
+        "AREA WITH REDUCED FLOOD HAZARD DUE TO ACCREDITED LEVEE SYSTEM": "reduced_levee",
+        "AREA WITH REDUCED FLOOD HAZARD DUE TO PROVISIONALLY ACCREDITED LEVEE SYSTEM": "reduced_levee",
+        "AREA OF MINIMAL FLOOD HAZARD": "minimal",
+        "AREAS DETERMINED TO BE OUTSIDE THE 0.2 PCT ANNUAL CHANCE FLOODPLAIN": "minimal",
+    }
+    # Complete explicit designations only: a substring can also occur in an
+    # outside-the-0.2% designation or contradictory free text.
+    zero_two_prefix = "0.2 PCT ANNUAL CHANCE FLOOD HAZARD"
+    for suffix in ("", " CONTAINED IN CHANNEL", " CONTAINED IN STRUCTURE",
+                   " IN COASTAL ZONE", " IN COMBINED RIVERINE AND COASTAL ZONE"):
+        categories[zero_two_prefix + suffix] = "zero_two_percent"
+    return HAZARD_CATEGORIES[categories.get(subtype, "unresolved_x")]
 
 
 def _category_style(category: HazardCategory) -> dict[str, object]:
@@ -363,7 +413,7 @@ def _optimized_layers_script(
         if (!text || ["nan", "none", "null", "<null>"].indexOf(text.toLowerCase()) !== -1) {
           return false;
         }
-        return Number(text) !== -9999;
+        return [-9999, -8888].indexOf(Number(text)) === -1;
       }
 
       function yesNo(value) {
@@ -473,6 +523,9 @@ def _optimized_layers_script(
           rows.push([fieldAliases.FLD_ZONE, zoneLabel]);
         }
         rows.push(["Flood Hazard Category", categoryLabel]);
+        if (props._nfhl_category === "unresolved_x") {
+          rows.push(["Interpretation", "Zone X subtype is unresolved; minimal hazard is not established. Not FEMA Zone D."]);
+        }
         if (validValue(subtype)) {
           rows.push([fieldAliases.ZONE_SUBTY, String(subtype)]);
         }
@@ -1077,13 +1130,13 @@ def _location_finder_script(map_name: str, bounds: tuple[float, float, float, fl
         const matches = [];
         layers.forEach(function(layer) {
           const feature = layer.feature;
-          const props = feature.properties || {};
-          const id = props.FLD_AR_ID || props._leaflet_id || JSON.stringify(feature.geometry && feature.geometry.bbox || props);
-          if (seen.has(id)) {
+          // The same feature is reused by grouped/detailed overlays. Distinct
+          // source records must remain visible even when their FEMA IDs conflict.
+          if (seen.has(feature)) {
             return;
           }
           if (featureContainsPoint(feature, lng, lat)) {
-            seen.add(id);
+            seen.add(feature);
             matches.push(feature);
           }
         });
@@ -1117,7 +1170,10 @@ def _location_finder_script(map_name: str, bounds: tuple[float, float, float, fl
         const extra = matches.length > 3
           ? '<div class="nfhl-location-note">Additional overlapping NFHL polygons found: ' + (matches.length - 3) + '</div>'
           : '';
-        resultEl.innerHTML = '<div class="nfhl-result-title">NFHL relationship</div>' + rows + extra;
+        const overlapNote = matches.length > 1
+          ? '<div class="nfhl-location-note">Multiple source polygons contain or touch this point. Review all designations; no hazard precedence is applied.</div>'
+          : '';
+        resultEl.innerHTML = '<div class="nfhl-result-title">NFHL relationship</div>' + overlapNote + rows + extra;
       }
 
       function locatePoint(lat, lng, label, resultEl) {
@@ -1244,7 +1300,7 @@ def valid_value(value: object) -> bool:
     if text.lower() in {"", "nan", "none", "null", "<null>"}:
         return False
     try:
-        if float(text) == -9999:
+        if float(text) in {-9999, -8888}:
             return False
     except ValueError:
         pass
@@ -1298,6 +1354,8 @@ def build_flood_popup_rows(props) -> list[tuple[str, str]]:
     if valid_value(zone):
         rows.append((FIELD_ALIASES["FLD_ZONE"], _display_zone_value(zone)))
     rows.append(("Flood Hazard Category", category.label))
+    if category.key == "unresolved_x":
+        rows.append(("Interpretation", "Zone X subtype is unresolved; minimal hazard is not established. Not FEMA Zone D."))
     if valid_value(subtype):
         rows.append((FIELD_ALIASES["ZONE_SUBTY"], str(subtype)))
 
